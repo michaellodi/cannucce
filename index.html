@@ -1,0 +1,91 @@
+<!--
+  Copyright (C) 2026 Michael Lodi
+  SPDX-License-Identifier: AGPL-3.0-or-later
+  See the LICENSE file for the full license text.
+-->
+<!DOCTYPE html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Il barista ordinato</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="app">
+      <header class="hero">
+        <h1>Il barista ordinato</h1>
+        <p>Scegli due cannucce. Se sono fuori ordine, il sistema le scambia.</p>
+      </header>
+
+      <section class="status">
+        <p id="instruction" class="instruction">Scegli due cannucce.</p>
+        <div class="stats" aria-live="polite">
+          <span id="comparisonCount" class="statBadge statComparison">Confronti: 0</span>
+          <span id="swapCount" class="statBadge statSwap">Scambi: 0</span>
+        </div>
+      </section>
+
+      <section class="boardCard">
+        <div class="boardHeader">
+          <span>Metti in ordine dalla più corta alla più lunga.</span>
+        </div>
+
+        <div class="boardShell">
+          <div id="celebrationLayer" class="celebrationLayer" aria-hidden="true"></div>
+          <div class="boardGuide" aria-hidden="true">
+            <span class="guideLabel">più corta</span>
+            <span class="guideLabel">più lunga</span>
+          </div>
+          <div id="board" class="board" aria-label="Cannucce"></div>
+          <div id="paper" class="paper" aria-hidden="true">
+            <span>foglio</span>
+          </div>
+        </div>
+
+        <div class="boardTools">
+          <button id="resetButton" class="actionButton actionOpen" type="button">
+            <span class="actionIcon strawsIcon" aria-hidden="true"></span>
+            <span>Nuova partita</span>
+          </button>
+
+          <button id="resetCoveredButton" class="actionButton actionCovered" type="button">
+            <span class="actionIcon paperIcon" aria-hidden="true"></span>
+            <span>Nuova partita coperta</span>
+          </button>
+
+          <button id="checkButton" class="actionButton actionCheck" type="button" data-state="neutral">
+            <span class="actionIcon checkIcon" aria-hidden="true"></span>
+            <span>Controlla</span>
+          </button>
+        </div>
+      </section>
+
+      <section class="footerControls" aria-label="Impostazioni">
+        <label class="field smallField">
+          <span>Disposizione iniziale</span>
+          <select id="preset">
+            <option value="random">Casuale</option>
+            <option value="almost">Quasi ordinata</option>
+            <option value="reversed">Al contrario</option>
+          </select>
+        </label>
+      </section>
+
+      <footer class="appFooter">
+        <p>App creata da Michael Lodi con il pesante aiuto di Codex.</p>
+        <p>Licenza: GNU AGPL v3 o successive. Questo programma è fornito senza garanzia.</p>
+        <p>Versione 0.1 del 23 marzo 2026</p>
+        <p class="footerLinks">
+          <a href="./LICENSE">Licenza completa</a>
+          <a href="./index.html">HTML</a>
+          <a href="./app.js">JavaScript</a>
+          <a href="./styles.css">CSS</a>
+          <a href="./README.md">README</a>
+        </p>
+      </footer>
+    </main>
+
+    <script src="./app.js"></script>
+  </body>
+</html>
