@@ -124,7 +124,7 @@ function render() {
 
     const strawBody = document.createElement("div");
     strawBody.className = "straw";
-    strawBody.style.height = `${straw.height}px`;
+    strawBody.style.setProperty("--straw-height", `${straw.height}px`);
     strawBody.style.setProperty("--straw-color", straw.color);
     frame.appendChild(strawBody);
     button.append(frame);
@@ -252,7 +252,7 @@ function compareSelectedPair() {
     }, SWAP_ANIMATION_MS + 50);
     return;
   } else {
-    setInstruction("Nessuno scambio: le due cannucce erano gia nell'ordine giusto.");
+    setInstruction("Nessuno scambio: le due cannucce erano già nell'ordine giusto.");
   }
 
   state.selectedIds = [];

@@ -184,6 +184,10 @@ body {
   grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 12px;
   align-items: end;
+  /* Straw heights are set in px by app.js (--straw-height); the scale
+     factor keeps the tallest straw inside .strawFrame (and under the
+     paper cover in covered mode), preserving the length ratios. */
+  --straw-scale: 0.98;
 }
 
 .strawButton {
@@ -239,6 +243,7 @@ body {
 
 .straw {
   position: relative;
+  height: calc(var(--straw-height, 200px) * var(--straw-scale, 1));
   width: min(22px, 50%);
   border: 2px solid rgba(0, 0, 0, 0.14);
   border-radius: 999px;
@@ -582,6 +587,9 @@ body {
   .board {
     gap: 8px;
     min-height: 340px;
+    /* .strawFrame shrinks to 270px here: rescale so the tallest straw
+       (345px) still fits and stays hidden by the paper cover. */
+    --straw-scale: 0.78;
   }
 
   .strawButton {
