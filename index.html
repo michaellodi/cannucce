@@ -19,7 +19,7 @@
       </header>
 
       <section class="status">
-        <p id="instruction" class="instruction">Scegli due cannucce.</p>
+        <p id="instruction" class="instruction" role="status" aria-atomic="true">Scegli due cannucce.</p>
         <div class="stats" aria-live="polite">
           <span id="comparisonCount" class="statBadge statComparison">Confronti: 0</span>
           <span id="swapCount" class="statBadge statSwap">Scambi: 0</span>
@@ -56,9 +56,10 @@
 
           <button id="checkButton" class="actionButton actionCheck" type="button" data-state="neutral">
             <span class="actionIcon checkIcon" aria-hidden="true"></span>
-            <span>Controlla</span>
+            <span id="checkLabel">Controlla</span>
           </button>
         </div>
+        <p id="coveredHelp" class="coveredHelp" hidden>Quando pensi di aver finito, spiega perché le cannucce dovrebbero essere ordinate. «Scopri e termina» toglie il foglio e conclude il tentativo, anche se non sono ordinate. Per riprovare, avvia una nuova partita coperta con nuove associazioni tra colori e lunghezze.</p>
       </section>
 
       <section class="footerControls" aria-label="Impostazioni">
@@ -75,7 +76,7 @@
       <footer class="appFooter">
         <p>App creata da Michael Lodi con il pesante aiuto di ChatGPT e Claude.</p>
         <p>Licenza: GNU AGPL v3 o successive. Questo programma è fornito senza garanzia.</p>
-        <p>Versione 0.2 del 16 luglio 2026</p>
+        <p>Versione 0.3 del 28 settembre 2026</p>
         <p class="footerLinks">
           <a href="./LICENSE">Licenza completa</a>
           <a href="./index.html">HTML</a>

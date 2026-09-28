@@ -363,6 +363,20 @@ body {
   box-shadow: 0 8px 0 rgba(255, 162, 33, 0.2);
 }
 
+.actionButton:disabled {
+  cursor: default;
+}
+
+.actionButton:disabled:hover,
+.actionButton:disabled:focus-visible {
+  transform: none;
+}
+
+.coveredHelp {
+  margin: 18px 0 0;
+  line-height: 1.5;
+}
+
 .actionCheck[data-state="failure"] {
   border-color: #ef476f;
   background: #ffe0e6;

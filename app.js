@@ -21,6 +21,8 @@ const presetSelect = document.querySelector("#preset");
 const resetButton = document.querySelector("#resetButton");
 const resetCoveredButton = document.querySelector("#resetCoveredButton");
 const checkButton = document.querySelector("#checkButton");
+const checkLabel = document.querySelector("#checkLabel");
+const coveredHelp = document.querySelector("#coveredHelp");
 const instruction = document.querySelector("#instruction");
 const comparisonCount = document.querySelector("#comparisonCount");
 const swapCount = document.querySelector("#swapCount");
@@ -32,10 +34,30 @@ const state = {
   swaps: 0,
   isComparing: false,
   isCovered: false,
+  isCoveredGame: false,
+  isFinished: false,
 };
 
 const COMPARE_DELAY_MS = 420;
 const SWAP_ANIMATION_MS = 700;
+const pendingTimers = new Set();
+let comparisonFocusId = null;
+let celebrationTimer = null;
+
+function schedule(callback, delay) {
+  const timer = window.setTimeout(() => {
+    pendingTimers.delete(timer);
+    callback();
+  }, delay);
+  pendingTimers.add(timer);
+  return timer;
+}
+
+function cancelPendingActions() {
+  pendingTimers.forEach((timer) => window.clearTimeout(timer));
+  pendingTimers.clear();
+  comparisonFocusId = null;
+}
 
 function shuffle(items) {
   const copy = [...items];
@@ -94,10 +116,15 @@ function setCheckState(nextState) {
 
 function updatePaper() {
   paper.classList.toggle("visible", state.isCovered);
-  resetButton.classList.toggle("modeActive", !state.isCovered);
-  resetCoveredButton.classList.toggle("modeActive", state.isCovered);
-  resetButton.setAttribute("aria-pressed", String(!state.isCovered));
-  resetCoveredButton.setAttribute("aria-pressed", String(state.isCovered));
+  resetButton.classList.toggle("modeActive", !state.isCoveredGame);
+  resetCoveredButton.classList.toggle("modeActive", state.isCoveredGame);
+  resetButton.setAttribute("aria-pressed", String(!state.isCoveredGame));
+  resetCoveredButton.setAttribute("aria-pressed", String(state.isCoveredGame));
+  coveredHelp.hidden = !state.isCoveredGame;
+  checkButton.disabled = state.isComparing || state.isFinished;
+  checkLabel.textContent = state.isFinished
+    ? "Tentativo concluso"
+    : state.isCoveredGame ? "Scopri e termina" : "Controlla";
 }
 
 function setInstruction(text) {
@@ -105,15 +132,21 @@ function setInstruction(text) {
 }
 
 function render() {
+  const focusedId = document.activeElement?.dataset.id;
   board.replaceChildren();
+  board.setAttribute("aria-busy", String(state.isComparing));
 
   state.order.forEach((straw, index) => {
     const button = document.createElement("button");
     button.type = "button";
     button.className = "strawButton";
     button.dataset.id = String(straw.id);
-    button.setAttribute("aria-label", `Cannuccia ${straw.label}, posizione ${index + 1}`);
-    button.disabled = state.isComparing;
+    const lengthLabel = state.isCovered
+      ? "lunghezza nascosta"
+      : `lunghezza ${STRAW_LENGTHS.indexOf(straw.height) + 1} su ${STRAW_LENGTHS.length}, dalla più corta alla più lunga`;
+    button.setAttribute("aria-label", `Cannuccia ${straw.label}, posizione ${index + 1}, ${lengthLabel}`);
+    button.disabled = state.isComparing || state.isFinished;
+    button.setAttribute("aria-pressed", String(state.selectedIds.includes(straw.id)));
 
     if (state.selectedIds.includes(straw.id)) {
       button.classList.add("selected");
@@ -124,7 +157,9 @@ function render() {
 
     const strawBody = document.createElement("div");
     strawBody.className = "straw";
-    strawBody.style.setProperty("--straw-height", `${straw.height}px`);
+    // A uniform drawing keeps decorative stripes and shadows from exposing
+    // the hidden length. The real height is used for comparisons and reveal.
+    strawBody.style.setProperty("--straw-height", `${state.isCovered ? STRAW_LENGTHS[0] : straw.height}px`);
     strawBody.style.setProperty("--straw-color", straw.color);
     frame.appendChild(strawBody);
     button.append(frame);
@@ -134,10 +169,25 @@ function render() {
 
   updateStats();
   updatePaper();
+
+  if (focusedId && !state.isComparing && !state.isFinished) {
+    board.querySelector(`[data-id="${focusedId}"]`)?.focus({ preventScroll: true });
+  }
+}
+
+function finishComparison() {
+  state.isComparing = false;
+  render();
+  // Restore keyboard focus after disabling the pair, unless the learner has
+  // meanwhile moved to another control (for example, a new-game button).
+  if (comparisonFocusId && document.activeElement === document.body) {
+    board.querySelector(`[data-id="${comparisonFocusId}"]`)?.focus({ preventScroll: true });
+  }
+  comparisonFocusId = null;
 }
 
 function launchCelebration() {
-  celebrationLayer.replaceChildren();
+  clearCelebration();
 
   for (let index = 0; index < 14; index += 1) {
     const burst = document.createElement("span");
@@ -154,13 +204,17 @@ function launchCelebration() {
   void celebrationLayer.offsetWidth;
   celebrationLayer.classList.add("active");
 
-  window.setTimeout(() => {
+  celebrationTimer = schedule(() => {
+    celebrationTimer = null;
     celebrationLayer.classList.remove("active");
     celebrationLayer.replaceChildren();
   }, 1300);
 }
 
 function clearCelebration() {
+  window.clearTimeout(celebrationTimer);
+  pendingTimers.delete(celebrationTimer);
+  celebrationTimer = null;
   celebrationLayer.classList.remove("active");
   celebrationLayer.replaceChildren();
 }
@@ -201,7 +255,7 @@ function animateSwap(previousOrder) {
       element.style.transform = "translateX(0)";
     });
 
-    window.setTimeout(() => {
+    schedule(() => {
       element.style.transition = "";
       element.style.transform = "";
     }, SWAP_ANIMATION_MS + 40);
@@ -223,14 +277,16 @@ function isSorted(order = state.order) {
 }
 
 function compareSelectedPair() {
+  if (state.isFinished) {
+    return;
+  }
   const selected = state.order
     .map((straw, index) => ({ straw, index }))
     .filter(({ straw }) => state.selectedIds.includes(straw.id))
     .sort((a, b) => a.index - b.index);
 
   if (selected.length !== 2) {
-    state.isComparing = false;
-    render();
+    finishComparison();
     return;
   }
 
@@ -246,22 +302,18 @@ function compareSelectedPair() {
     setInstruction(`Scambio fatto tra la cannuccia ${left.index + 1} e la cannuccia ${right.index + 1}.`);
     state.selectedIds = [];
     animateSwap(previousOrder);
-    window.setTimeout(() => {
-      state.isComparing = false;
-      render();
-    }, SWAP_ANIMATION_MS + 50);
+    schedule(finishComparison, SWAP_ANIMATION_MS + 50);
     return;
   } else {
     setInstruction("Nessuno scambio: le due cannucce erano già nell'ordine giusto.");
   }
 
   state.selectedIds = [];
-  state.isComparing = false;
-  render();
+  finishComparison();
 }
 
 function handleSelection(id) {
-  if (state.isComparing) {
+  if (state.isComparing || state.isFinished) {
     return;
   }
 
@@ -281,9 +333,10 @@ function handleSelection(id) {
   state.selectedIds = [...state.selectedIds, id];
 
   if (state.selectedIds.length === 2) {
+    comparisonFocusId = document.activeElement?.dataset.id ?? null;
     state.isComparing = true;
     render();
-    window.setTimeout(compareSelectedPair, COMPARE_DELAY_MS);
+    schedule(compareSelectedPair, COMPARE_DELAY_MS);
     return;
   }
 
@@ -291,7 +344,11 @@ function handleSelection(id) {
   render();
 }
 
-function resetGame() {
+function resetGame(covered = state.isCoveredGame) {
+  cancelPendingActions();
+  state.isCoveredGame = covered;
+  state.isCovered = covered;
+  state.isFinished = false;
   state.order = buildStartOrder();
   state.selectedIds = [];
   state.comparisons = 0;
@@ -304,28 +361,36 @@ function resetGame() {
 }
 
 function checkOrder() {
-  if (isSorted()) {
-    if (state.isCovered) {
-      state.isCovered = false;
-      render();
-    }
+  if (state.isComparing || state.isFinished) {
+    return;
+  }
 
+  if (state.isCoveredGame) {
+    state.isCovered = false;
+    state.isFinished = true;
+    state.selectedIds = [];
+    render();
+  }
+
+  if (isSorted()) {
     setCheckState("success");
-    setInstruction("Bravissimi: le cannucce sono in ordine.");
+    setInstruction(state.isFinished
+      ? "Bravissimi: le cannucce sono in ordine. Tentativo concluso!"
+      : "Bravissimi: le cannucce sono in ordine.");
     launchCelebration();
   } else {
     setCheckState("failure");
-    setInstruction("Non ancora. Prova con un altro confronto.");
+    setInstruction(state.isFinished
+      ? "Le cannucce non sono ancora in ordine. Tentativo concluso: discuti come migliorare la strategia, poi avvia una nuova partita coperta."
+      : "Non ancora. Prova con un altro confronto.");
   }
 }
 
 resetButton.addEventListener("click", () => {
-  state.isCovered = false;
-  resetGame();
+  resetGame(false);
 });
 resetCoveredButton.addEventListener("click", () => {
-  state.isCovered = true;
-  resetGame();
+  resetGame(true);
 });
 checkButton.addEventListener("click", checkOrder);
 presetSelect.addEventListener("change", () => {
