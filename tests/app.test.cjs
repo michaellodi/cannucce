@@ -14,7 +14,7 @@ function makeApp() {
   let now = 0;
   let timerId = 0;
   const timers = new Map();
-  const document = { activeElement: null };
+  const document = { activeElement: null, documentElement: {}, querySelectorAll: () => [] };
   class Element {
     constructor() {
       this.children = [];
@@ -63,6 +63,7 @@ function makeApp() {
   document.createElement = () => new Element();
   const context = vm.createContext({
     document,
+    navigator: { language: "it-IT" },
     window: {
       setTimeout(callback, delay) { const id = ++timerId; timers.set(id, { at: now + delay, callback }); return id; },
       clearTimeout(id) { timers.delete(id); },
@@ -86,6 +87,7 @@ function makeApp() {
       testRandomSeed = (Math.imul(1664525, testRandomSeed) + 1013904223) >>> 0;
       return testRandomSeed / 4294967296;
     };`);
+  run(fs.readFileSync(path.join(__dirname, "../i18n.js"), "utf8"));
   run(source);
   return {
     elements, document, run, advance,

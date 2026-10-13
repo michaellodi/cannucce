@@ -7,11 +7,11 @@
 const STRAW_LENGTHS = [205, 240, 275, 310, 345];
 
 const STRAW_COLORS = [
-  { color: "#e1262f", label: "rossa" },
-  { color: "#54b9eb", label: "azzurra" },
-  { color: "#70bf44", label: "verde" },
-  { color: "#7053a6", label: "viola" },
-  { color: "#ffd52f", label: "gialla" },
+  { color: "#e1262f", label: "red" },
+  { color: "#54b9eb", label: "blue" },
+  { color: "#70bf44", label: "green" },
+  { color: "#7053a6", label: "purple" },
+  { color: "#ffd52f", label: "yellow" },
 ];
 
 const board = document.querySelector("#board");
@@ -101,8 +101,8 @@ function buildStartOrder() {
 }
 
 function updateStats() {
-  comparisonCount.textContent = `Confronti: ${state.comparisons}`;
-  swapCount.textContent = `Scambi: ${state.swaps}`;
+  comparisonCount.textContent = t("comparisons", { count: state.comparisons });
+  swapCount.textContent = t("swaps", { count: state.swaps });
 }
 
 function setCheckState(nextState) {
@@ -123,12 +123,14 @@ function updatePaper() {
   coveredHelp.hidden = !state.isCoveredGame;
   checkButton.disabled = state.isComparing || state.isFinished;
   checkLabel.textContent = state.isFinished
-    ? "Tentativo concluso"
-    : state.isCoveredGame ? "Scopri e termina" : "Controlla";
+    ? t("finished")
+    : state.isCoveredGame ? t("reveal") : t("check");
 }
 
-function setInstruction(text) {
-  instruction.textContent = text;
+function setInstruction(key, params = {}) {
+  state.instructionKey = key;
+  state.instructionParams = params;
+  instruction.textContent = t(key, params);
 }
 
 function render() {
@@ -142,9 +144,9 @@ function render() {
     button.className = "strawButton";
     button.dataset.id = String(straw.id);
     const lengthLabel = state.isCovered
-      ? "lunghezza nascosta"
-      : `lunghezza ${STRAW_LENGTHS.indexOf(straw.height) + 1} su ${STRAW_LENGTHS.length}, dalla più corta alla più lunga`;
-    button.setAttribute("aria-label", `Cannuccia ${straw.label}, posizione ${index + 1}, ${lengthLabel}`);
+      ? t("hiddenLength")
+      : t("length", { rank: STRAW_LENGTHS.indexOf(straw.height) + 1, total: STRAW_LENGTHS.length });
+    button.setAttribute("aria-label", t("strawLabel", { color: t(straw.label), position: index + 1, length: lengthLabel }));
     button.disabled = state.isComparing || state.isFinished;
     button.setAttribute("aria-pressed", String(state.selectedIds.includes(straw.id)));
 
@@ -299,13 +301,13 @@ function compareSelectedPair() {
     const previousOrder = [...state.order];
     [state.order[left.index], state.order[right.index]] = [state.order[right.index], state.order[left.index]];
     state.swaps += 1;
-    setInstruction(`Scambio fatto tra la cannuccia ${left.index + 1} e la cannuccia ${right.index + 1}.`);
+    setInstruction("swapped", { left: left.index + 1, right: right.index + 1 });
     state.selectedIds = [];
     animateSwap(previousOrder);
     schedule(finishComparison, SWAP_ANIMATION_MS + 50);
     return;
   } else {
-    setInstruction("Nessuno scambio: le due cannucce erano già nell'ordine giusto.");
+    setInstruction("noSwap");
   }
 
   state.selectedIds = [];
@@ -321,7 +323,7 @@ function handleSelection(id) {
 
   if (state.selectedIds.includes(id)) {
     state.selectedIds = state.selectedIds.filter((selectedId) => selectedId !== id);
-    setInstruction("Scegli due cannucce.");
+    setInstruction("chooseTwo");
     render();
     return;
   }
@@ -340,7 +342,7 @@ function handleSelection(id) {
     return;
   }
 
-  setInstruction("Hai scelto una cannuccia. Scegline ancora una.");
+  setInstruction("chooseAnother");
   render();
 }
 
@@ -356,7 +358,7 @@ function resetGame(covered = state.isCoveredGame) {
   state.isComparing = false;
   clearCelebration();
   setCheckState("neutral");
-  setInstruction("Scegli due cannucce.");
+  setInstruction("chooseTwo");
   render();
 }
 
@@ -375,14 +377,14 @@ function checkOrder() {
   if (isSorted()) {
     setCheckState("success");
     setInstruction(state.isFinished
-      ? "Bravissimi: le cannucce sono in ordine. Tentativo concluso!"
-      : "Bravissimi: le cannucce sono in ordine.");
+      ? "wonFinished"
+      : "won");
     launchCelebration();
   } else {
     setCheckState("failure");
     setInstruction(state.isFinished
-      ? "Le cannucce non sono ancora in ordine. Tentativo concluso: discuti come migliorare la strategia, poi avvia una nuova partita coperta."
-      : "Non ancora. Prova con un altro confronto.");
+      ? "unsortedFinished"
+      : "unsorted");
   }
 }
 
@@ -397,4 +399,8 @@ presetSelect.addEventListener("change", () => {
   resetGame();
 });
 
+i18n.init(() => {
+  render();
+  setInstruction(state.instructionKey, state.instructionParams);
+});
 resetGame();

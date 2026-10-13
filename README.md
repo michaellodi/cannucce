@@ -59,3 +59,15 @@ In breve:
 - il progetto è fornito senza garanzia
 
 Per i dettagli completi, vedi il file `LICENSE`.
+
+## Lingue
+
+L’interfaccia è disponibile in italiano e inglese. Al primo accesso usa la lingua
+principale del browser: italiano per `it` e varianti come `it-IT`, inglese per tutte
+le altre lingue. Le bandierine in alto a destra cambiano lingua senza azzerare la
+partita o il programma. La scelta viene ricordata, se il browser consente il
+salvataggio locale, e condivisa dalle due demo sullo stesso dominio.
+
+`i18n.js` contiene le traduzioni e la selezione della lingua. I test browser per
+le lingue si eseguono con `node --test tests/i18n.test.cjs` (richiedono Playwright).
+È possibile indicare Chrome/Chromium con `BROWSER_EXECUTABLE=/percorso/browser`.

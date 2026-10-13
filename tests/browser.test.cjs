@@ -20,14 +20,14 @@ test("real browser layout, comparisons, keyboard and touch", async (t) => {
   assert.ok(["chromium", "firefox", "webkit"].includes(engine), `Unsupported engine: ${engine}`);
   const browser = await playwright[engine].launch({
     headless: true,
-    ...(engine === "chromium" ? { channel: process.env.BROWSER_CHANNEL || "chrome" } : {}),
+    ...(engine === "chromium" ? process.env.BROWSER_EXECUTABLE ? { executablePath: process.env.BROWSER_EXECUTABLE } : { channel: process.env.BROWSER_CHANNEL || "chrome" } : {}),
   });
   const errors = [];
   const watchErrors = (page) => {
     page.on("pageerror", (error) => errors.push(error.message));
     page.on("console", (message) => { if (message.type() === "error") errors.push(message.text()); });
   };
-  const page = await browser.newPage({ viewport: { width: 1280, height: 1000 } });
+  const page = await browser.newPage({ locale: "it-IT", viewport: { width: 1280, height: 1000 } });
   watchErrors(page);
   const reset = async (covered = true) => {
     await page.goto(url);
@@ -124,7 +124,7 @@ test("real browser layout, comparisons, keyboard and touch", async (t) => {
 
     await t.test("390 px touch taps compare a pair and revealing ends the attempt", async () => {
       // hasTouch works in all three engines; Firefox does not support isMobile.
-      const touchPage = await browser.newPage({ viewport: { width: 390, height: 844 }, hasTouch: true });
+      const touchPage = await browser.newPage({ locale: "it-IT", viewport: { width: 390, height: 844 }, hasTouch: true });
       watchErrors(touchPage);
       try {
         await touchPage.goto(url);
